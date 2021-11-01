@@ -1,0 +1,19 @@
+{
+    "name": "Players.Systems",
+    "references": [
+        "Camera.Components",
+        "Players.Components",
+        "Unity.Entities",
+        "Unity.Mathematics",
+        "Unity.Transforms"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,24 @@
+{
+    "name": "Selection.Systems",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Physics",
+        "Unity.InputSystem",
+        "Unity.Mathematics",
+        "Selection.Components",
+        "Camera.Components",
+        "Players.Components",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
