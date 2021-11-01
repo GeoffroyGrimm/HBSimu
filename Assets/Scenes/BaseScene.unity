@@ -1734,7 +1734,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   goTile: {fileID: 194402446}
-  dimensions: 21
+  dimensions: 50
 --- !u!114 &1097521613
 MonoBehaviour:
   m_ObjectHideFlags: 0

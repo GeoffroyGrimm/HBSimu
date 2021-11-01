@@ -24,6 +24,7 @@ namespace Field.Systems
         private NativeArray<Entity> m_tiles;
         private int m_dimension;
         private int m_maxTiles;
+        private int m_index;
 
         protected override void OnCreate()
         {
@@ -40,16 +41,18 @@ namespace Field.Systems
 
             m_tiles = new NativeArray<Entity>(m_maxTiles, Allocator.Persistent);
             m_field = new NativeArray<float>(m_maxTiles, Allocator.Persistent);
+            var offset = 20f / (m_dimension / 10);
 
             for (int i = 0; i < m_maxTiles; i++)
             {
                 var newTile = EntityManager.Instantiate(settings.tile);
                 var origin = EntityManager.GetComponentData<Translation>(settings.tile).Value;
-                EntityManager.SetComponentData(newTile, new Translation() { Value = origin + new float3(10 * (int)(i % settings.dimensions), 0, 10 * (int)(i / settings.dimensions)) });
+                EntityManager.SetComponentData(newTile, new Translation() { Value = origin + new float3(offset * (int)(i % settings.dimensions), 0, offset * (int)(i / settings.dimensions)) });
                 var id = i;
                 EntityManager.AddComponentData(newTile, new Components.Tile() { index = id });
                 m_tiles[i] = newTile;
             }
+            EntityManager.SetEnabled(settings.tile, false);
         }
 
         protected override void OnUpdate()
@@ -59,25 +62,28 @@ namespace Field.Systems
             {
                 var tile = EntityManager.GetComponentData<Selection.Components.HitInfo>(m_qSelection.GetSingletonEntity()).collider;
                 var index = EntityManager.GetComponentData<Components.Tile>(tile).index;
-                EntityManager.SetComponentData(tile, new Scale() { Value = 1 });
-                for (int i = 0; i < m_maxTiles; i++)
-                    EntityManager.SetComponentData(m_tiles[i], new Scale() { Value = .2f });
-
-                var distance = 3;
-                var max = math.pow(distance * 2, 2);
-                var startIndex = math.clamp(index - (distance + distance * m_dimension), 0, m_maxTiles);
-                for (int i = 0; i < max; i++)
+                if (m_index != index)
                 {
-                    if (i >= m_maxTiles)
-                        continue;
-                    Debug.Log(i + "  " + (distance * 2) + "  " + (int)(i % (distance * 2)));
-                    var j = startIndex + (i + i * (int)(i / (distance * 2)));
-                    EntityManager.SetComponentData(m_tiles[j], new Scale() { Value = .5f });
-                }
+                    m_index = index;
+                    EntityManager.SetComponentData(tile, new Scale() { Value = 1 });
+                    for (int i = 0; i < m_maxTiles; i++)
+                        EntityManager.SetComponentData(m_tiles[i], new Scale() { Value = .2f });
 
-                EntityManager.SetComponentData(m_tiles[index], new Scale() { Value = 1 });
-                EntityManager.SetComponentData(m_tiles[startIndex], new Scale() { Value = 1 });
+                    var range = 4;
+                    var maxRange = range * 2 + 1;
+                    var max = math.pow(maxRange, 2);
+                    var startIndex = math.clamp(index - (range + range * m_dimension), 0, m_maxTiles);
+                    for (int i = 0; i < max; i++)
+                    {
+                        var j = startIndex + i + (int)(i / maxRange) * (m_dimension - maxRange);
+                        if (j >= m_maxTiles)
+                            continue;
+                        EntityManager.SetComponentData(m_tiles[j], new Scale() { Value = .3f });
+                    }
+                    EntityManager.SetComponentData(m_tiles[index], new Scale() { Value = .5f });
+                }
             }
+            // Debug
         }
         protected override void OnStopRunning()
         {

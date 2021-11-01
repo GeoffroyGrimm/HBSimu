@@ -36,6 +36,7 @@ namespace Field.Components
                 tile = tile
             };
             _dstManager.AddComponentData(_entity, settings);
+            goTile.SetActive(false);
         }
 
         private Entity CreateEntityPrefab(GameObject _object) => ConvertPrefabToEntityMesh(_object);
