@@ -9,8 +9,7 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
-using UnityEngine.UI;
-using UnityEngine.InputSystem;
+using UnityEngine.Profiling;
 
 
 namespace Field.Systems
@@ -26,12 +25,15 @@ namespace Field.Systems
         private int m_dimension;
         private int m_maxTiles;
         private int m_index;
+        private float m_range;
         private Components.FieldSettings m_settings;
+        private EndSimulationEntityCommandBufferSystem m_barrier;
 
         protected override void OnCreate()
         {
             m_qFieldSettings = GetEntityQuery(typeof(Components.FieldSettings));
             m_qSelection = GetEntityQuery(typeof(Selection.Components.HitInfo), typeof(Selection.Components.Tags.Tile));
+            m_barrier = World.GetExistingSystem<EndSimulationEntityCommandBufferSystem>();
 
             RequireForUpdate(m_qFieldSettings);
         }
@@ -43,6 +45,7 @@ namespace Field.Systems
 
             m_tiles = new NativeArray<Entity>(m_maxTiles, Allocator.Persistent);
             m_field = new NativeArray<float>(m_maxTiles, Allocator.Persistent);
+            m_range = m_settings.range;
             var offset = 20f / (m_dimension / 10);
 
             for (int i = 0; i < m_maxTiles; i++)
@@ -67,26 +70,48 @@ namespace Field.Systems
                 if (m_index != index)
                 {
                     m_index = index;
-                    EntityManager.SetComponentData(tile, new Scale() { Value = 1 });
-                    for (int i = 0; i < m_maxTiles; i++)
-                        EntityManager.SetComponentData(m_tiles[i], new Scale() { Value = .5f });
 
-                    float range = m_settings.range;
-                    var maxRange = range * 2 + 1;
+                    var maxRange = m_range * 2 + 1;
                     var max = math.pow(maxRange, 2);
+                    var startIndex = math.clamp(index - (m_range + m_range * m_dimension), 0, m_maxTiles);
 
-                    var startIndex = math.clamp(index - (range + range * m_dimension), 0, m_maxTiles);
+                    var commandBuffer = m_barrier.CreateCommandBuffer().AsParallelWriter();
+
+                    List<Entity> tilesToChange = new List<Entity>();
+                    List<float> tilesToValue = new List<float>();
                     for (int i = 0; i < max; i++)
                     {
-                        var lin = (int)(i / maxRange) - range;
-                        var col = MathMod(i, maxRange) - range;
+                        var lin = (int)(i / maxRange) - m_range;
+                        var col = MathMod(i, maxRange) - m_range;
                         var j = (int)(startIndex + i + (int)(i / maxRange) * (m_dimension - maxRange));
                         if (j >= m_maxTiles)
                             continue;
 
-                        float dist = (math.abs(lin) + math.abs(col)) / maxRange;
-                        EntityManager.SetComponentData(m_tiles[j], new Scale() { Value = .5f * dist });
+                        float dist = 1 - (math.abs(lin) + math.abs(col)) / maxRange;
+                        EntityManager.AddComponentData(m_tiles[j], new Components.NewScale() { value = .3f * dist });
                     }
+
+                    var jobHandle1 = Entities
+                    .WithAll<Components.Tile>()
+                    .WithNone<Components.NewScale>()
+                    .ForEach((Entity _entity,
+                    int entityInQueryIndex)
+                    =>
+                    {
+                        commandBuffer.SetComponent(entityInQueryIndex, _entity, new Scale() { Value = .1f });
+                    }).ScheduleParallel(Dependency);
+
+                    var jobHandle2 = Entities
+                     .ForEach((Entity _entity,
+                     int entityInQueryIndex,
+                     Components.NewScale _newScale)
+                     =>
+                     {
+                         commandBuffer.SetComponent(entityInQueryIndex, _entity, new Scale() { Value = _newScale.value });
+                         commandBuffer.RemoveComponent<Components.NewScale>(entityInQueryIndex, _entity);
+                     }).ScheduleParallel(jobHandle1);
+
+                    m_barrier.AddJobHandleForProducer(jobHandle2);
                 }
             }
             // Debug
@@ -101,93 +126,4 @@ namespace Field.Systems
         static int MathMod(float a, float b) => (math.abs((int)a * (int)b) + (int)a) % (int)b;
 
     }
-
-    // JobSection
-    public class FieldJob : JobComponentSystem
-    {
-        EntityQuery m_qField;
-        EntityCommandBufferSystem m_bufferSystem;
-
-
-        protected override void OnCreate()
-        {
-            m_bufferSystem = World.GetOrCreateSystem<EntityCommandBufferSystem>();
-        }
-        protected override void OnStartRunning()
-        {
-        }
-
-        protected override void OnStopRunning()
-        {
-        }
-
-        protected override JobHandle OnUpdate(JobHandle _inputDependencies)
-        {
-            var jobHandle = SchedulexxxJob(
-                    disposeArrayJobHandle,
-                    cursorEntity
-                    );
-            return jobHandle;
-        }
-
-
-// JOBS
-        public JobHandle SchedulexxxJob(
-            JobHandle _dependencies,
-            Entity _cursorEntity)
-        {
-            var jobHandle = new xxxJob
-            {
-                CommandBuffer = m_bufferSystem.CreateCommandBuffer().AsParallelWriter(),
-                HiddenFromEntity = GetComponentDataFromEntity<Unity.Rendering.DisableRendering>(true),
-                CursorTrackersFromEntity = GetComponentDataFromEntity<Components.CursorTracker>(true),
-                Cursor = _cursorEntity
-            }.Schedule(this, _dependencies);
-
-
-            m_bufferSystem.AddJobHandleForProducer(jobHandle);
-
-            return jobHandle;
-        }
-// JBOS DEF
-        public struct xxxJob : IJobForEachWithEntity_ECCCC<Components.FollowCursor, Translation, Rotation, LocalToWorld>
-        {
-            public EntityCommandBuffer.ParallelWriter CommandBuffer;
-            [ReadOnly] public ComponentDataFromEntity<Unity.Rendering.DisableRendering> HiddenFromEntity;
-            [ReadOnly] public ComponentDataFromEntity<Components.CursorTracker> CursorTrackersFromEntity;
-            [ReadOnly] public Entity Cursor;
-
-            public void Execute(
-                Entity entity,
-                int index,
-                [ReadOnly] ref Components.FollowCursor _fc,
-                ref Translation _translation,
-                ref Rotation _rotation,
-                [ReadOnly] ref LocalToWorld _localtoworld)
-            {
-                if (CursorTrackersFromEntity[Cursor].IsValid)
-                {
-                    if (HiddenFromEntity.HasComponent(entity))
-                        CommandBuffer.RemoveComponent<Unity.Rendering.DisableRendering>(index, entity);
-                    _translation = new Translation { Value = CursorTrackersFromEntity[Cursor].position };
-                    _rotation.Value = math.mul(
-                        math.fromToRotation(
-                            _localtoworld.Up,
-                            CursorTrackersFromEntity[Cursor].normalHitPoint),
-                            _rotation.Value
-                        );
-                    _translation.Value = CursorTrackersFromEntity[Cursor].position + (_localtoworld.Up * (_fc.heightAdjustment/2 + _fc.heightOffset));
-                }
-                else
-                {
-                    if (!HiddenFromEntity.HasComponent(entity))
-                       CommandBuffer.AddComponent<Unity.Rendering.DisableRendering>(index, entity, default(Unity.Rendering.DisableRendering));
-                    _rotation.Value = quaternion.identity;
-                }
-            }
-        }
-
-
-    }
-
 }

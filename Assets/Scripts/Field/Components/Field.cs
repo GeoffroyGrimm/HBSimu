@@ -19,7 +19,10 @@ namespace Field.Components
     public struct Tile : IComponentData
     {
         public int index;
-
+    }
+    public struct NewScale : IComponentData
+    {
+        public float value;
     }
 
     namespace Tags

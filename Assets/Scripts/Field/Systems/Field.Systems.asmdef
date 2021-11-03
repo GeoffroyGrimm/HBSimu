@@ -7,7 +7,8 @@
         "Unity.Mathematics",
         "Unity.Transforms",
         "Unity.InputSystem",
-        "Selection.Components"
+        "Selection.Components",
+        "Unity.Rendering.Hybrid"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
