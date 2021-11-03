@@ -16,6 +16,7 @@ namespace Field.Components
     {
         public GameObject goTile;
         public int dimensions;
+        public float range;
 
         private BlobAssetStore m_blobAssetOwner;
         private void OnEnable() => m_blobAssetOwner = new BlobAssetStore();
@@ -33,7 +34,8 @@ namespace Field.Components
             var settings = new FieldSettings()
             {
                 dimensions = dimensions,
-                tile = tile
+                tile = tile,
+                range = range,
             };
             _dstManager.AddComponentData(_entity, settings);
             goTile.SetActive(false);

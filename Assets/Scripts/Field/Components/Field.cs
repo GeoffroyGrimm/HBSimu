@@ -13,6 +13,7 @@ namespace Field.Components
     {
         public int dimensions;
         public Entity tile;
+        public float range;
     }
 
     public struct Tile : IComponentData
