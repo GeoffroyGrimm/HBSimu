@@ -28,7 +28,8 @@ namespace Field.Components
                    GameObjectConversionSystem _conversionSystem)
         {
             var tile = CreateEntityPrefab(goTile);
-            _dstManager.AddComponentData(tile, new Components.Tile());
+            _dstManager.AddComponent<Components.Tile>(tile);
+            _dstManager.AddComponent<Static>(tile);
             _dstManager.AddComponentData(tile, new Scale() { Value = .5f });
             _dstManager.SetComponentData(tile, new Translation() { Value = goTile.transform.position });
             var settings = new FieldSettings()
