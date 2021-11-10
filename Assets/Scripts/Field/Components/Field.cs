@@ -11,15 +11,17 @@ namespace Field.Components
 {
     public struct FieldSettings : IComponentData
     {
-        public int dimensions;
         public Entity tile;
-        public float range;
+        public Vector3 boundA;
+        public Vector3 boundB;
+        public int granulosity;
     }
 
     public struct Tile : IComponentData
     {
         public int index;
     }
+
     public struct NewScale : IComponentData
     {
         public float value;
@@ -27,5 +29,6 @@ namespace Field.Components
 
     namespace Tags
     {
+
     }
 }

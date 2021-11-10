@@ -15,9 +15,9 @@ namespace Field.Components
     public class FieldProxy : MonoBehaviour, IConvertGameObjectToEntity
     {
         public GameObject goTile;
-        public int dimensions;
-        public float range;
-
+        public Transform boundA;
+        public Transform boundB;
+        public int granulosity;
         private BlobAssetStore m_blobAssetOwner;
         private void OnEnable() => m_blobAssetOwner = new BlobAssetStore();
         private void OnDestroy() => m_blobAssetOwner.Dispose();
@@ -34,9 +34,10 @@ namespace Field.Components
             _dstManager.SetComponentData(tile, new Translation() { Value = goTile.transform.position });
             var settings = new FieldSettings()
             {
-                dimensions = dimensions,
                 tile = tile,
-                range = range,
+                boundA = boundA.position,
+                boundB = boundB.position,
+                granulosity = granulosity,
             };
             _dstManager.AddComponentData(_entity, settings);
             goTile.SetActive(false);
@@ -50,5 +51,6 @@ namespace Field.Components
             settings.ConversionFlags |= GameObjectConversionUtility.ConversionFlags.AssignName;
             return GameObjectConversionUtility.ConvertGameObjectHierarchy(_object, settings);
         }
+
     }
 }

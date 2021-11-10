@@ -22,6 +22,7 @@ namespace Players.Components
         ArriereGauche,
         AilierDroit,
         AilierGauche,
+        Gardien,
         Count
     }
     public struct PlayersSettings : IComponentData

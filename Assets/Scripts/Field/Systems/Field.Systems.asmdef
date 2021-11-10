@@ -8,6 +8,7 @@
         "Unity.Transforms",
         "Unity.InputSystem",
         "Selection.Components",
+        "Players.Components",
         "Unity.Rendering.Hybrid"
     ],
     "includePlatforms": [],
